@@ -75,6 +75,11 @@ export default {
 	],
 	watch: {
     clearScreen: false,
-    buildDelay: 300,
+    // For whatever reason I have to wait for a bit before building,
+    // otherwise changes to main.ts will not be reflected in the bundle.
+    // The amount of time to wait seems to either vary, or be dependent
+    // on where the file is in the dependency hierarchy
+    // ".svelte" files seem to work regardless
+    buildDelay: 1000,
 	}
 };
