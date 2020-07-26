@@ -1,7 +1,10 @@
 <script lang="ts">
   import Editor from './Editor.svelte';
+  import ModeGate from './ModeGate.svelte';
+
   import {generateDSLSource} from './generationDSL';
-  import type {transaction} from './generationDSL';
+  import type {transaction, date} from './generationDSL';
+
   let actual: transaction[] = [
     {message: "trans1", amount: {integer: 100, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"act.csv"},
     {message: "trans2", amount: {integer: -100, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"act2.csv"},
@@ -9,15 +12,26 @@
     {message: "pne", amount: {integer: 200, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"act.csv"},
   ];
   let entered: transaction[] = [
-    {message: "pe-e", amount: {integer: 100, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"ent.csv"},
+    {message: "pe-e", amount: {integer: 100, decimal: 0}, date: {year: 2020, month: 1, day: 22}, source:"ent.csv"},
     {message: "pne-e", amount: {integer: 300, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"ent.csv"},
   ];
-  let value = generateDSLSource({entered, actual});
+
+  let sources: Record<string, {transactions: transaction[], is: "entered" | "actual"}> = {
+    "act.csv": {transactions: actual, is: "actual"},
+    "ent.csv": {transactions: entered, is: "entered"},
+  };
+
+  let inDSLMode = false;
+  let cutoff: date | undefined = {year: 2020, month: 1, day: 1};
+  let maxDayDiff: number = 7;
+  let dslSource: string = "";
+  $: dslSource = generateDSLSource(sources, maxDayDiff, cutoff);
 </script>
 
 <main>
 	<h1>Budget Helper</h1>
-  <Editor enabled={true} {value}/>
+  <ModeGate allowContinue={true} bind:inDSLMode bind:cutoff bind:maxDayDiff {sources}></ModeGate>
+  <Editor enabled={inDSLMode} value={dslSource}/>
 </main>
 
 <style>

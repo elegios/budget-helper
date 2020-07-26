@@ -5,9 +5,12 @@
 
   export let value: string;
 
-  let area: HTMLTextAreaElement | null = null;
+  let area: HTMLTextAreaElement | undefined;
   function updateHeight() {
     if (!area) return;
+    // NOTE(vipa): we might run this reactive thing before the binding
+    // has been updated, so we need to make sure the value is correct
+    if (area.value !== value) area.value = value;
     area.style.height = "1px";
     area.style.height = (area.scrollHeight + 1) + "px";
   }

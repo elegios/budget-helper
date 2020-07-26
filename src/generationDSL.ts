@@ -33,19 +33,19 @@ function compareLexicographic(...n: number[]): number {
     return 0;
 }
 
-function compareDate(d1: date, d2: date): number {
+export function compareDate(d1: date, d2: date): number {
     return compareLexicographic(d1.year - d2.year, d1.month - d2.month, d1.day - d2.day);
 }
 
-function compareTransaction(t1: transaction, t2: transaction): number {
+export function compareTransaction(t1: transaction, t2: transaction): number {
     return compareDate(t1.date, t2.date);
 }
 
-function formatDate(d: date): string {
-    return `${d.year}/${d.month}/${d.day}`;
+export function formatDate(d: date): string {
+    return `${d.year}/${(d.month + "").padStart(2, '0')}/${(d.day + "").padStart(2, '0')}`;
 }
 
-function formatAmount(a: amount): string {
+export function formatAmount(a: amount): string {
     return `${a.integer}.${(a.decimal + "").padStart(2, '0')}`;
 }
 
@@ -53,12 +53,12 @@ function escapeCSV(s: string): string {
     return '"' + s.replace(/"/g, '""') + '"';
 }
 
-function formatCSVLine(t: transaction): string {
-    const message = escapeCSV(t.message);
+export function formatCSVLine(t: transaction): string {
+    const message = (escapeCSV(t.message) + ",").padEnd(20, ' ');
     const date = formatDate(t.date);
-    const amount = formatAmount(t.amount);
+    const amount = formatAmount(t.amount).padStart(15, ' ');
     const source = escapeCSV(t.source);
-    return`${message}, ${date}, ${amount}, ${source}`
+    return`${message} ${date}, ${amount}, ${source}`
 }
 
 export type matched = {
@@ -138,7 +138,7 @@ export function generateMatchLine(r: matchResult): string {
         case 'unmatched':
             const line = formatCSVLine(r.transaction);
             switch (r.is) {
-                case "entered": return `NOMATCH entered: (${line})`;
+                case "entered": return `UNM ${line}`;
                 case "actual":  return `${addPrefix} ${line}`;
                 default: return assertUnreachable(r.is);
             }
@@ -157,14 +157,23 @@ export function generateMatchLine(r: matchResult): string {
     }
 }
 
-export function matchTransactions({entered, actual, maxDayDiff}: {entered: transaction[], actual: transaction[], maxDayDiff?: number}): matchResult[] {
+export type transactionFile = {
+    transactions: transaction[],
+    is: "entered" | "actual",
+}
+
+export function matchTransactions(sources: Record<string, transactionFile>, maxDayDiff?: number, cutoff?: date): matchResult[] {
     function makeUnmatched(kind: "entered" | "actual"): (t: transaction) => unmatched {
         return t => {return { type: "unmatched", transaction: t, is: kind }};
     }
-    const toProcess: unmatched[] = entered.map(makeUnmatched("entered"))
-        .concat(actual.map(makeUnmatched("actual")));
+    const toProcess: unmatched[] = Object.values(sources)
+        .flatMap(({transactions, is}) => transactions.map(makeUnmatched(is)))
     toProcess.sort(compareMatchResult);
-    maxDayDiff = maxDayDiff !== undefined && maxDayDiff > 0 ? maxDayDiff : 7;
+    if (cutoff) {
+        const idx = toProcess.findIndex(r => compareDate(r.transaction.date, cutoff) >= 0);
+        toProcess.splice(0, idx !== -1 ? idx : toProcess.length);
+    }
+    maxDayDiff = maxDayDiff !== undefined && maxDayDiff >= 0 ? maxDayDiff : 7;
 
     let results: matchResult[] = [];
     let pending: unmatched[] = [];
@@ -174,7 +183,7 @@ export function matchTransactions({entered, actual, maxDayDiff}: {entered: trans
             const r = pending[i];
 
             // This transaction is older than the maxDayDiff and will never be matched, move to results
-            if (dateMinus(item.transaction.date, r.transaction.date) < -maxDayDiff) {
+            if (dateMinus(item.transaction.date, r.transaction.date) > maxDayDiff) {
                 pending.splice(i, 1); i--;
                 results.push(r);
                 continue;  // we may still find something later that matches
@@ -222,7 +231,13 @@ export function matchTransactions({entered, actual, maxDayDiff}: {entered: trans
     return results;
 }
 
-export function generateDSLSource(config: {entered: transaction[], actual: transaction[], maxDayDiff?: number}): string {
-    return `    Only lines beginning with "${addPrefix}" will be in the exported file, all other lines are ignored.` + "\n\n" +
-        matchTransactions(config).map(generateMatchLine).join("\n");
+export function generateDSLSource(sources: Record<string, transactionFile>, maxDayDiff?: number, cutoff?: date): string {
+    const results = matchTransactions(sources, maxDayDiff, cutoff);
+    let count = {matched: 0, transfer: 0, actual: 0, entered: 0};
+    results.forEach(r => count[r.type === 'unmatched' ? r.is : r.type] += 1);
+    const text =
+        `    Only lines beginning with "${addPrefix}" will be in the exported file, all other lines are ignored.
+    UNM entries are those that are entered but have no actual counterpart.
+    added: ${count.actual}  unmatched: ${count.entered}  matches: ${count.matched}  transfers: ${count.transfer}`
+    return text + "\n\n" + results.map(generateMatchLine).join("\n");
 }
