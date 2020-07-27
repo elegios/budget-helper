@@ -17,12 +17,14 @@
   $: if (area && value) updateHeight();
 </script>
 
-<textarea
-  disabled={!enabled}
-  bind:value
-  bind:this={area}></textarea>
+<div>
+  <textarea
+    disabled={!enabled}
+    bind:value
+    bind:this={area}></textarea>
 
-<button disabled={!enabled} on:click="{_ => alert(parse(value))}">Generate CSV</button>
+  <button disabled={!enabled} on:click="{_ => alert(parse(value))}">Generate CSV</button>
+</div>
 
 <style>
   textarea {

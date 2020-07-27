@@ -1,6 +1,7 @@
 <script lang="ts">
   import Editor from './Editor.svelte';
   import ModeGate from './ModeGate.svelte';
+  import SourceList from './SourceList.svelte';
 
   import {generateDSLSource} from './generationDSL';
   import type {transaction, date} from './generationDSL';
@@ -30,6 +31,7 @@
 
 <main>
 	<h1>Budget Helper</h1>
+  <SourceList bind:sources></SourceList>
   <ModeGate allowContinue={true} bind:inDSLMode bind:cutoff bind:maxDayDiff {sources}></ModeGate>
   <Editor enabled={inDSLMode} value={dslSource}/>
 </main>
