@@ -30,6 +30,7 @@
   {#each Object.entries(sources) as source (source[0])}
     <div class="name">{source[0]}</div>
     <div class="is">is: {source[1].is}</div>
+    <button on:click="{_ => {delete sources[source[0]]; sources = sources;}}">Remove</button>
   {/each}
 </div>
 <div id="adder">
@@ -56,7 +57,7 @@
   #container {
     display: grid;
     grid-auto-flow: row;
-    grid-template-columns: [name] minmax(200px, max-content) [is] minmax(100px, max-content);
+    grid-template-columns: [name] minmax(200px, max-content) [is] minmax(100px, max-content) [delete] min-content;
     grid-gap: 5px;
     text-align: left;
     justify-content: center;
@@ -72,6 +73,11 @@
   }
   .is {
     grid-column: is;
+  }
+  #container>button {
+    grid-column: delete;
+    margin: 0px;
+    padding: 1px 3px;
   }
   #adder {
     margin-top: 5px;
