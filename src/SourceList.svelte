@@ -49,6 +49,7 @@
       on:cancel="{_ => fileToBeAdded = undefined}"
       on:add="{_ => addSource()}"
       bind:result={newSource}
+      previousNames={Object.keys(sources)}
       file={fileToBeAdded} />
   {/if}
 </div>

@@ -8,8 +8,12 @@
   const dispatch = createEventDispatcher();
 
   export let file: File;
+  export let previousNames: string[];
 
   let name = file.name;
+
+  let wouldOverwrite: boolean = false;
+  $: wouldOverwrite = previousNames.some(n => n === name);
 
   let stage: "make-table" | "make-transactions" = "make-table";
 
@@ -36,9 +40,15 @@
     </div>
     <button on:click="{_ => dispatch('cancel')}">Cancel</button>
     {#if stage === "make-table"}
-      <button on:click="{_ => stage = 'make-transactions'}" disabled={!table}>Continue</button>
+      <button
+        id="continue"
+        on:click="{_ => stage = 'make-transactions'}"
+        disabled={!table}> Continue </button>
     {:else}
-      <button on:click="{_ => dispatch('add')}" disabled={!result}>Finalize</button>
+      <button
+        id="continue"
+        on:click="{_ => dispatch('add')}"
+        disabled={!result}> {wouldOverwrite ? "Overwrite" : "Add New"} </button>
     {/if}
   </div>
   {#if stage === "make-table"}
@@ -63,5 +73,8 @@
   }
   #is {
     display: inline-block;
+  }
+  #continue {
+    width: 6em;
   }
 </style>
