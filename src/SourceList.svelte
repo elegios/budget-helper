@@ -4,13 +4,13 @@
   import type {transaction} from './generationDSL';
 
   export let enabled: boolean = true;
-  export let sources: Record<string, {transactions: transaction[], is: "entered" | "actual"}>;
+  export let sources: Record<string, {transactions: transaction[], is: "entered" | "actual", filename: string}>;
 
   export let allowContinue: boolean = true;
 
   let fileInput: HTMLInputElement | null;
   let fileToBeAdded: File | null;
-  let newSource: [string, {transactions: transaction[], is: "entered" | "actual"}] | null;
+  let newSource: [string, {transactions: transaction[], is: "entered" | "actual", filename: string}] | null;
 
   function maybeSelectedFile() {
     if (!fileInput?.files?.length) {
@@ -34,7 +34,7 @@
 
 <div id="container">
   {#each Object.entries(sources) as source (source[0])}
-    <div class="name">{source[0]}</div>
+    <div class="name">{source[0]} <span class="filename">({source[1].filename})</span></div>
     <div class="is">is: {source[1].is}</div>
     <button
       on:click="{_ => {delete sources[source[0]]; sources = sources;}}"
@@ -91,5 +91,8 @@
   }
   #adder {
     margin-top: 5px;
+  }
+  .filename {
+    color: #777;
   }
 </style>

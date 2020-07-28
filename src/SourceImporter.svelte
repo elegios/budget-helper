@@ -10,7 +10,7 @@
   export let file: File;
   export let previousNames: string[];
 
-  let name = file.name;
+  let name = "";
 
   let wouldOverwrite: boolean = false;
   $: wouldOverwrite = previousNames.some(n => n === name);
@@ -21,16 +21,21 @@
   let transactions: transaction[] | null = null;
   let is: "entered" | "actual" = "actual";
 
-  export let result: [string, {transactions: transaction[], is: "entered" | "actual"}] | null = null;
+  export let result: [string, {transactions: transaction[], is: "entered" | "actual", filename: string}] | null = null;
 
-  $: result = transactions?.length ? [name, {transactions, is}] : null;
+  $: result = transactions?.length && name !== ""
+     ? [name, {transactions, is, filename: file.name}]
+     : null;
 </script>
 
 <div>
   <div id="control">
     <label>
       Name:
-      <input type="text" bind:value={name}>
+      <input
+        placeholder="Please enter a name for this table"
+        type="text"
+        bind:value={name}>
     </label>
     <div id="is">
       <label><input type=radio bind:group={is} value={"entered"}> Entered</label>

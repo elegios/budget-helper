@@ -17,9 +17,9 @@
     {message: "pne-e", amount: {integer: 300, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"ent.csv"},
   ];
 
-  let sources: Record<string, {transactions: transaction[], is: "entered" | "actual"}> = {
-    "act.csv": {transactions: actual, is: "actual"},
-    "ent.csv": {transactions: entered, is: "entered"},
+  let sources: Record<string, {transactions: transaction[], is: "entered" | "actual", filename: string}> = {
+    "from account 1": {transactions: actual, is: "actual", filename: "act.csv"},
+    "entered in budget": {transactions: entered, is: "entered", filename: "ent.csv"},
   };
 
   let allowContinue: boolean = true;
