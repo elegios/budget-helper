@@ -17,15 +17,13 @@
 
   let stage: "make-table" | "make-transactions" = "make-table";
 
-  let table: string[][] | undefined;
-  let transactions: transaction[] | undefined;
-  let is: "entered" | "actual" = "entered";
+  let table: string[][] | null = null;
+  let transactions: transaction[] | null = null;
+  let is: "entered" | "actual" = "actual";
 
-  export let result: [string, {transactions: transaction[], is: "entered" | "actual"}] | undefined = undefined;
+  export let result: [string, {transactions: transaction[], is: "entered" | "actual"}] | null = null;
 
-  $: if (transactions) {
-    result = [name, {transactions, is}];
-  }
+  $: result = transactions?.length ? [name, {transactions, is}] : null;
 </script>
 
 <div>

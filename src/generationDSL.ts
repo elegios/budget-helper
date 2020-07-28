@@ -241,3 +241,147 @@ export function generateDSLSource(sources: Record<string, transactionFile>, maxD
     added: ${count.actual}  unmatched: ${count.entered}  matches: ${count.matched}  transfers: ${count.transfer}`
     return text + "\n\n" + results.map(generateMatchLine).join("\n");
 }
+
+const dotRemoveRegex = /[^\-.0-9]/g;
+const commaRemoveRegex = /[^\-,0-9]/g;
+function parseAmount(amount: string | undefined, decimalPoint: "dot" | "comma"): amount | undefined | string {
+    if (amount === undefined)
+        return;
+
+    const errorMessage = `malformed number: '${amount}'`;
+
+    const [integerPart, decimalPart, extra] = amount
+        .replace(decimalPoint === "dot" ? dotRemoveRegex : commaRemoveRegex, "")
+        .split(decimalPoint === "dot" ? "." : ",");
+    if (extra !== undefined)
+        return errorMessage;
+
+    const integer = parseInt(integerPart, 10);
+    if (isNaN(integer))
+        return errorMessage;
+
+    if (decimalPart === undefined)
+        return {integer, decimal: 0} ;
+
+    const decimal = (decimalPart.length === 1 ? 10 : 1) * parseInt(decimalPart.substring(0, 2), 10);
+    if (isNaN(decimal))
+        return errorMessage;
+
+    return {integer, decimal};
+}
+
+const dateSplitRegex = /[/\- ]+/g;
+function parseDate(date: string | undefined, order: string): date | undefined | string {
+    if (date === undefined)
+        return;
+
+    let year: undefined | number;
+    let month: undefined | number;
+    let day: undefined | number;
+
+    const split = date.split(dateSplitRegex).filter(x => x);
+
+    for (let i = 0; i < order.length; i++) {
+        switch (order.charAt(i)) {
+            case 'y':
+            case 'Y':
+                year = parseInt(split[i], 10);
+                break;
+            case 'm':
+            case 'M':
+                month = parseInt(split[i], 10);
+                break;
+            case 'd':
+            case 'D':
+                day = parseInt(split[i], 10);
+                break;
+            default:
+                return "Unknown character '${order.charAt(i)}' in date order description '${order}'";
+        }
+    }
+
+    let missing: ("year" | "month" | "day")[] = [];
+    let noParse: ("year" | "month" | "day")[] = [];
+    if (year === undefined) {
+        missing.push("year");
+    } else if (isNaN(year)) {
+        noParse.push("year");
+    }
+    if (month === undefined) {
+        missing.push("month");
+    } else if (isNaN(month)) {
+        noParse.push("month");
+    }
+    if (day === undefined) {
+        missing.push("day");
+    } else if (isNaN(day)) {
+        noParse.push("day");
+    }
+
+    if (missing.length || noParse.length) {
+        return `Split: ${JSON.stringify(split)}, ` +
+            (missing.length ? `missing: ${missing.join(", ")} ` : "") +
+            (noParse ? `malformed: ${noParse.join(", ")}` : "");
+    }
+
+    return {year: year as number, month: month as number, day: day as number};
+}
+
+type parseConfig = {
+    source: string,
+    dropCount: number,
+    amountConfig: {column: number, decimalPoint: "dot" | "comma"},
+    dateConfig: {column: number, order: string},
+    messageConfig: {column: number},
+}
+export function parseTable(table: string[][], config: parseConfig): transaction[] | string {
+    const {dropCount, amountConfig, dateConfig, messageConfig, source} = config;
+    if (dropCount > table.length)
+        return `Cannot drop ${dropCount} rows from a table with ${table.length} rows.`
+
+    const result = new Array<transaction>(table.length - dropCount);
+    let error = "";
+
+    for (let rowIdx = dropCount; rowIdx < table.length; rowIdx++) {
+        const row = table[rowIdx];
+        const amount = parseAmount(row[amountConfig.column], amountConfig.decimalPoint);
+        const date = parseDate(row[dateConfig.column], dateConfig.order);
+        const message = row[messageConfig.column];
+
+        const indent = "\t";
+
+        if (typeof amount === 'string' || amount === undefined
+            || typeof date === 'string' || date === undefined
+            || message === undefined) {
+            error += `Row ${rowIdx+1}:\n`;
+
+            if (amount === undefined) {
+                error +=
+                `${indent}Amount should be in column ${amountConfig.column}, but that column doesn't exist.\n`;
+            } else if (typeof amount === 'string') {
+                error +=
+                `${indent}Column ${amountConfig.column}: ${amount}\n`;
+            }
+
+            if (date === undefined) {
+                error +=
+                `${indent}Date should be in column ${dateConfig.column}, but that column doesn't exist.\n`;
+            } else if (typeof date === 'string') {
+                error +=
+                `${indent}Column ${dateConfig.column}: ${date}\n`;
+            }
+
+            if (message === undefined) {
+                error +=
+                `${indent}Message should be in column ${messageConfig.column}, but that column doesn't exist.\n`;
+            }
+
+            break;
+        }
+
+        result[rowIdx - dropCount] = {message, amount, date, source};
+    }
+
+    if (error !== "") return error
+    return result;
+}

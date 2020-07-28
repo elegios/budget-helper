@@ -22,6 +22,7 @@
     "ent.csv": {transactions: entered, is: "entered"},
   };
 
+  let allowContinue: boolean = true;
   let inDSLMode = false;
   let cutoff: date | undefined = {year: 2020, month: 1, day: 1};
   let maxDayDiff: number = 7;
@@ -31,8 +32,8 @@
 
 <main>
 	<h1>Budget Helper</h1>
-  <SourceList bind:sources></SourceList>
-  <ModeGate allowContinue={true} bind:inDSLMode bind:cutoff bind:maxDayDiff {sources}></ModeGate>
+  <SourceList enabled={!inDSLMode} bind:sources bind:allowContinue></SourceList>
+  <ModeGate {allowContinue} bind:inDSLMode bind:cutoff bind:maxDayDiff {sources}></ModeGate>
   <Editor enabled={inDSLMode} value={dslSource}/>
 </main>
 

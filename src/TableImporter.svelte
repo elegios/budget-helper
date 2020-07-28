@@ -6,14 +6,14 @@
   const dispatch = createEventDispatcher();
 
   export let file: File;
-  export let table: string[][] | undefined = undefined;
+  export let table: string[][] | null = null;
 
   // Taken from https://stackoverflow.com/questions/190852/how-can-i-get-file-extensions-with-javascript/12900504#12900504
   let extension = file.name.slice((file.name.lastIndexOf(".") - 1 >>> 0) + 2);
 
   // CSV things
   let firstTime = true;
-  let fileText: string | undefined | false;
+  let fileText: string | null | false;
   let delimiter: string = "";
   $: if (fileText) {
     const result = CSV.parse(fileText, {
@@ -44,7 +44,7 @@
 
 <div>
   {#if extension === "csv"}
-    {#if fileText === undefined}
+    {#if fileText === null}
       Reading file...
     {:else if fileText === false}
       Couldn't read the file, please try again.
@@ -54,9 +54,9 @@
         <input type="text" bind:value={delimiter}>
       </label>
       <div id="preview">
-        <div>Input</div>
+        <h3>Input</h3>
         <div id="file" class="content">{fileText}</div>
-        <div>Table</div>
+        <h3>Table</h3>
         <div id="table" class="content">
           {#if table}
             <table class="content">
@@ -84,6 +84,9 @@
     grid-template-columns: 50% 50%;
     grid-template-rows: max-content minmax(min-content, 10em);
     grid-gap: 5px;
+  }
+  h3 {
+    margin: 0px;
   }
   .content {
     background-color: #eee;

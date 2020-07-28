@@ -3,15 +3,18 @@
 
   import type {transaction} from './generationDSL';
 
+  export let enabled: boolean = true;
   export let sources: Record<string, {transactions: transaction[], is: "entered" | "actual"}>;
 
-  let fileInput: HTMLInputElement | undefined;
-  let fileToBeAdded: File | undefined;
-  let newSource: [string, {transactions: transaction[], is: "entered" | "actual"}] | undefined;
+  export let allowContinue: boolean = true;
+
+  let fileInput: HTMLInputElement | null;
+  let fileToBeAdded: File | null;
+  let newSource: [string, {transactions: transaction[], is: "entered" | "actual"}] | null;
 
   function maybeSelectedFile() {
     if (!fileInput?.files?.length) {
-      fileToBeAdded = undefined;
+      fileToBeAdded = null;
       return;
     }
     fileToBeAdded = fileInput.files[0];
@@ -23,14 +26,19 @@
       return;
     }
     sources[newSource[0]] = newSource[1];
+    fileToBeAdded = null;
   }
+
+  $: allowContinue = !fileToBeAdded;
 </script>
 
 <div id="container">
   {#each Object.entries(sources) as source (source[0])}
     <div class="name">{source[0]}</div>
     <div class="is">is: {source[1].is}</div>
-    <button on:click="{_ => {delete sources[source[0]]; sources = sources;}}">Remove</button>
+    <button
+      on:click="{_ => {delete sources[source[0]]; sources = sources;}}"
+      disabled={!enabled}>Remove</button>
   {/each}
 </div>
 <div id="adder">
@@ -40,13 +48,14 @@
       <input
         id=""
         type="file"
+        disabled={!enabled}
         bind:this={fileInput}
         on:change="{_ => maybeSelectedFile()}"
         accept=".csv,.xlsx" />
     </label>
   {:else}
     <SourceImporter
-      on:cancel="{_ => fileToBeAdded = undefined}"
+      on:cancel="{_ => fileToBeAdded = null}"
       on:add="{_ => addSource()}"
       bind:result={newSource}
       previousNames={Object.keys(sources)}
