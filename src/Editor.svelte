@@ -1,4 +1,5 @@
 <script lang="ts">
+  import {saveAs} from 'file-saver';
   import {parse} from './generationDSL';
 
   export let enabled: boolean = true;
@@ -15,6 +16,10 @@
     area.style.height = (area.scrollHeight + 1) + "px";
   }
   $: if (area && value) updateHeight();
+
+  function saveFile(content: string) {
+    saveAs(new Blob([content], {type: "text/csv"}), "export.csv");
+  }
 </script>
 
 <div>
@@ -23,7 +28,7 @@
     bind:value
     bind:this={area}></textarea>
 
-  <button disabled={!enabled} on:click="{_ => alert(parse(value))}">Generate CSV</button>
+  <button disabled={!enabled} on:click="{_ => saveFile(parse(value))}">Generate CSV</button>
 </div>
 
 <style>
