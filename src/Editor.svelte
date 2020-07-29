@@ -28,7 +28,7 @@
   }
 </script>
 
-<div>
+<div id="container">
   <textarea
     disabled={!enabled}
     bind:value
@@ -38,6 +38,11 @@
 </div>
 
 <style>
+  #container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
   textarea {
     font-family: monospace;
     text-align: left;
