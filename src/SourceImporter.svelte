@@ -58,7 +58,7 @@
   {#if stage === "make-table"}
     <TableImporter bind:table {file} />
   {:else if table}
-    <TableParser {table} source={name} bind:transactions />
+    <TableParser {table} source={name} filename={file.name} bind:transactions />
   {/if}
 </div>
 

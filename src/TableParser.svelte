@@ -3,6 +3,7 @@
   import type {transaction} from './generationDSL';
 
   export let table: string[][];
+  export let filename: string;
   export let source: string;
   export let transactions: transaction[] | null = null;
 
@@ -15,6 +16,71 @@
   let amountColumn = 2;
   let decimalPoint: "dot" | "comma" = "dot";
   let dateOrder = "ymd";
+
+  // Preliminary hacky way of auto-picking import settings.
+  // Should make something with an interface later, so the
+  // code doesn't need to be changed if the format changes.
+  // TODO(vipa): make this better
+  type presetConfig = {
+    regex: RegExp,
+    dropCount: number,
+    messColumn: number,
+    dateColumn: number,
+    dateOrder: string,
+    amountColumn: number,
+    decimal: "dot" | "comma",
+  }
+  const presets: presetConfig[] = [
+    { // SEB
+      regex: /^kontoutdrag.*\.xlsx$/,
+      dropCount: 8,
+      messColumn: 3,
+      dateColumn: 1,
+      dateOrder: "ymd",
+      amountColumn: 4,
+      decimal: "dot",
+    },
+    { // ICA
+      regex: /^Kontohandelser.*\.csv/,
+      dropCount: 1,
+      messColumn: 1,
+      dateColumn: 0,
+      dateOrder: "ymd",
+      amountColumn: 4,
+      decimal: "comma",
+    },
+    { // Goodbudget
+      regex: /^history.*\.csv/,
+      dropCount: 1,
+      messColumn: 3,
+      dateColumn: 0,
+      dateOrder: "dmy",
+      amountColumn: 5,
+      decimal: "dot",
+    },
+    { // Swedbank
+      regex: /^Transaktioner_.*\.csv/,
+      dropCount: 2,
+      messColumn: 8,
+      dateColumn: 6,
+      dateOrder: "ymd",
+      amountColumn: 10,
+      decimal: "dot",
+    },
+  ];
+
+  for (const preset of presets) {
+    if (!preset.regex.test(filename))
+      continue;
+
+    dropCount = preset.dropCount;
+    messageColumn = preset.messColumn;
+    amountColumn = preset.amountColumn;
+    dateColumn = preset.dateColumn;
+    dateOrder = preset.dateOrder;
+    decimalPoint = preset.decimal;
+    break;
+  }
 
   $: {
     const result = parseTable(table, {
