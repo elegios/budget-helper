@@ -18,11 +18,11 @@
 
   $: {
     const result = parseTable(table, {
-      dropCount,
+      dropCount: dropCount ?? 0,
       source,
-      amountConfig: {column: amountColumn, decimalPoint},
-      dateConfig: {column: dateColumn, order: dateOrder},
-      messageConfig: {column: messageColumn},
+      amountConfig: {column: amountColumn ?? 0, decimalPoint},
+      dateConfig: {column: dateColumn ?? 0, order: dateOrder},
+      messageConfig: {column: messageColumn ?? 0},
     });
     if (typeof result === 'string') {
       transactions = null;

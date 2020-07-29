@@ -1,6 +1,7 @@
 <script lang="ts">
   import {createEventDispatcher} from 'svelte';
-  import type {transaction} from './generationDSL';
+  import {todayDate} from './generationDSL';
+  import type {transaction, transactionFile} from './generationDSL';
 
   import TableImporter from './TableImporter.svelte';
   import TableParser from './TableParser.svelte';
@@ -21,10 +22,10 @@
   let transactions: transaction[] | null = null;
   let is: "entered" | "actual" = "actual";
 
-  export let result: [string, {transactions: transaction[], is: "entered" | "actual", filename: string}] | null = null;
+  export let result: [string, transactionFile] | null = null;
 
   $: result = transactions?.length && name !== ""
-     ? [name, {transactions, is, filename: file.name}]
+     ? [name, {transactions, is, filename: file.name, importDate: todayDate()}]
      : null;
 </script>
 

@@ -61,6 +61,15 @@ export function formatCSVLine(t: transaction): string {
     return`${message} ${date}, ${amount}, ${source}`
 }
 
+export function todayDate(): date {
+    const d = new Date();
+    return {
+        year: d.getFullYear(),
+        month: d.getMonth() + 1,
+        day: d.getDate(),
+    };
+}
+
 export type matched = {
     readonly type: 'matched',
     readonly actual: transaction,
@@ -160,6 +169,8 @@ export function generateMatchLine(r: matchResult): string {
 export type transactionFile = {
     transactions: transaction[],
     is: "entered" | "actual",
+    filename: string,
+    importDate: date,
 }
 
 export function matchTransactions(sources: Record<string, transactionFile>, maxDayDiff?: number, cutoff?: date): matchResult[] {

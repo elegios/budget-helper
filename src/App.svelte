@@ -4,7 +4,7 @@
   import SourceList from './SourceList.svelte';
 
   import {generateDSLSource} from './generationDSL';
-  import type {transaction, date} from './generationDSL';
+  import type {transaction, transactionFile, date} from './generationDSL';
 
   let actual: transaction[] = [
     {message: "trans1", amount: {integer: 100, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"act.csv"},
@@ -17,9 +17,9 @@
     {message: "pne-e", amount: {integer: 300, decimal: 0}, date: {year: 2020, month: 1, day: 20}, source:"ent.csv"},
   ];
 
-  let sources: Record<string, {transactions: transaction[], is: "entered" | "actual", filename: string}> = {
-    "from account 1": {transactions: actual, is: "actual", filename: "act.csv"},
-    "entered in budget": {transactions: entered, is: "entered", filename: "ent.csv"},
+  let sources: Record<string, transactionFile> = {
+    "from account 1": {transactions: actual, is: "actual", filename: "act.csv", importDate: {year: 2020, month: 1, day: 1}},
+    "entered in budget": {transactions: entered, is: "entered", filename: "ent.csv", importDate: {year: 2020, month: 1, day: 1}},
   };
 
   let allowContinue: boolean = true;
