@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "papaparse": "^5.2.0",
-    "sirv-cli": "^1.0.0"
+    "sirv-cli": "^1.0.0",
+    "xlsx": "^0.16.4"
   }
 }

@@ -129,7 +129,7 @@
     display: grid;
     grid-auto-flow: column;
     grid-template-columns: 50% 50%;
-    grid-template-rows: max-content minmax(min-content, 10em);
+    grid-template-rows: max-content minmax(2em, 10em);
     grid-gap: 5px;
   }
   h3 {
