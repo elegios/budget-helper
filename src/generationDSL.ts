@@ -217,7 +217,6 @@ export function matchTransactions(sources: Record<string, transactionFile>, maxD
 
             // This transaction looks like a transfer
             if (item.is === "actual" && r.is === "actual"
-                && item.transaction.source !== r.transaction.source
                 && amountEq(amountNeg(item.transaction.amount), r.transaction.amount)) {
 
                 pending.splice(i, 1); i--;
