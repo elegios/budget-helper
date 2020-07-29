@@ -26,6 +26,8 @@
   },
   "dependencies": {
     "file-saver": "^2.0.2",
+    "fp-ts": "^2.7.1",
+    "io-ts": "^2.2.9",
     "papaparse": "^5.2.0",
     "sirv-cli": "^1.0.0",
     "xlsx": "^0.16.4"

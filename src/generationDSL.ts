@@ -1,3 +1,6 @@
+import * as D from 'io-ts/lib/Decoder';
+import {isLeft, isRight} from 'fp-ts/lib/Either';
+
 const addPrefix = "ADD";
 
 export type date = {
@@ -395,4 +398,39 @@ export function parseTable(table: string[][], config: parseConfig): transaction[
 
     if (error !== "") return error
     return result;
+}
+
+const dateDecoder: D.Decoder<unknown, date> =
+    D.type({
+        year: D.number,
+        month: D.number,
+        day: D.number,
+    });
+const amountDecoder: D.Decoder<unknown, amount> =
+    D.type({
+        integer: D.number,
+        decimal: D.number,
+    });
+const transactionDecoder: D.Decoder<unknown, transaction> =
+    D.type({
+        message: D.string,
+        amount: amountDecoder,
+        date: dateDecoder,
+        source: D.string,
+    });
+const fileRecordDecoder: D.Decoder<unknown, Record<string, transactionFile>> =
+    D.record(
+        D.type({
+            is: D.literal("entered", "actual"),
+            filename: D.string,
+            importDate: dateDecoder,
+            transactions: D.array(transactionDecoder),
+        })
+    );
+
+export function isFileRecord(input: unknown): input is Record<string, transactionFile> {
+    const res = fileRecordDecoder.decode(input);
+    if (isLeft(res))
+        console.warn(D.draw(res.left));
+    return isRight(res);
 }

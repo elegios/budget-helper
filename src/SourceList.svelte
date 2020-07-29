@@ -1,7 +1,7 @@
 <script lang="ts">
   import SourceImporter from './SourceImporter.svelte';
 
-  import {formatDate} from './generationDSL';
+  import {formatDate, isFileRecord} from './generationDSL';
   import type {transactionFile} from './generationDSL';
 
   export let enabled: boolean = true;
@@ -30,7 +30,23 @@
     fileToBeAdded = null;
   }
 
+  function saveSources() {
+    localStorage.setItem("sources", JSON.stringify(sources));
+  }
+
+  function loadSources() {
+    const previous = localStorage.getItem("sources");
+    if (!previous)
+      return;
+
+    const res: unknown = JSON.parse(previous);
+    if (isFileRecord(res))
+      sources = res;
+  }
+
   $: allowContinue = !fileToBeAdded;
+
+  loadSources();
 </script>
 
 <div id="container">
@@ -59,6 +75,9 @@
         on:change="{_ => maybeSelectedFile()}"
         accept=".csv,.xlsx" />
     </label>
+    <button
+      disabled={!Object.keys(sources).length}
+      on:click="{_ => saveSources()}"> Save Imported </button>
   {:else}
     <SourceImporter
       on:cancel="{_ => fileToBeAdded = null}"
@@ -97,6 +116,9 @@
   }
   #adder {
     margin-top: 5px;
+  }
+  #adder>label {
+    display: inline;
   }
   .filename {
     color: #777;
