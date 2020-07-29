@@ -9,11 +9,17 @@
   let area: HTMLTextAreaElement | undefined;
   function updateHeight() {
     if (!area) return;
+    // NOTE(vipa): changing the size of the textarea will change the max
+    // scroll position, so we store it and restore it afterwards to make
+    // this invisible.
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
     // NOTE(vipa): we might run this reactive thing before the binding
     // has been updated, so we need to make sure the value is correct
     if (area.value !== value) area.value = value;
     area.style.height = "1px";
     area.style.height = (area.scrollHeight + 1) + "px";
+    window.scrollTo(scrollX, scrollY);
   }
   $: if (area && value) updateHeight();
 
