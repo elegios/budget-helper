@@ -180,7 +180,7 @@ export function matchTransactions(sources: Record<string, transactionFile>, maxD
     function makeUnmatched(kind: "entered" | "actual"): (t: transaction) => unmatched {
         return t => {return { type: "unmatched", transaction: t, is: kind }};
     }
-    const toProcess: unmatched[] = Object.values(sources)
+    let toProcess: unmatched[] = Object.values(sources)
         .flatMap(({transactions, is}) => transactions.map(makeUnmatched(is)))
     toProcess.sort(compareMatchResult);
     if (cutoff) {
@@ -192,53 +192,61 @@ export function matchTransactions(sources: Record<string, transactionFile>, maxD
     let results: matchResult[] = [];
     let pending: unmatched[] = [];
 
-    outer: for (let item of toProcess) {
-        for (let i = 0; i < pending.length; i++) {
-            const r = pending[i];
+    let nextProcess: unmatched[] = [];
+    for (let diff = 0; diff < maxDayDiff; diff++) {
+        outer: for (let item of toProcess) {
+            for (let i = 0; i < pending.length; i++) {
+                const r = pending[i];
 
-            // This transaction is older than the maxDayDiff and will never be matched, move to results
-            if (dateMinus(item.transaction.date, r.transaction.date) > maxDayDiff) {
-                pending.splice(i, 1); i--;
-                results.push(r);
-                continue;  // we may still find something later that matches
+                // This transaction is older than the maxDayDiff and will never be matched, move to nextProcess
+                if (dateMinus(item.transaction.date, r.transaction.date) > maxDayDiff) {
+                    pending.splice(i, 1); i--;
+                    nextProcess.push(r);
+                    continue;  // we may still find something later that matches
+                }
+
+                // This transaction matches the examined one
+                if (item.is !== r.is && amountEq(item.transaction.amount, r.transaction.amount)) {
+                    pending.splice(i, 1); i--;
+                    results.push({
+                        type: "matched",
+                        entered: (item.is === "entered" ? item : r).transaction,
+                        actual: (item.is === "entered" ? r : item).transaction,
+                    });
+
+                    continue outer;
+                }
+
+                // This transaction looks like a transfer
+                if (item.is === "actual" && r.is === "actual"
+                    && amountEq(amountNeg(item.transaction.amount), r.transaction.amount)) {
+
+                    pending.splice(i, 1); i--;
+                    const source = (amountIsNeg(item.transaction.amount) ? item : r).transaction;
+                    const dest = (amountIsNeg(item.transaction.amount) ? r : item).transaction;
+                    results.push({
+                        type: "transfer",
+                        fromTransaction: source,
+                        toSource: dest.source,
+                        toMessage: dest.message,
+                    });
+
+                    continue outer;
+                }
             }
 
-            // This transaction matches the examined one
-            if (item.is !== r.is && amountEq(item.transaction.amount, r.transaction.amount)) {
-                pending.splice(i, 1); i--;
-                results.push({
-                    type: "matched",
-                    entered: (item.is === "entered" ? item : r).transaction,
-                    actual: (item.is === "entered" ? r : item).transaction,
-                });
-
-                continue outer;
-            }
-
-            // This transaction looks like a transfer
-            if (item.is === "actual" && r.is === "actual"
-                && amountEq(amountNeg(item.transaction.amount), r.transaction.amount)) {
-
-                pending.splice(i, 1); i--;
-                const source = (amountIsNeg(item.transaction.amount) ? item : r).transaction;
-                const dest = (amountIsNeg(item.transaction.amount) ? r : item).transaction;
-                results.push({
-                    type: "transfer",
-                    fromTransaction: source,
-                    toSource: dest.source,
-                    toMessage: dest.message,
-                });
-
-                continue outer;
-            }
+            // We found nothing matching, add to pending
+            pending.push(item);
         }
-
-        // We found nothing matching, add to pending
-        pending.push(item);
+        toProcess.length = 0;
+        let tmp = toProcess;
+        toProcess = nextProcess;
+        nextProcess = tmp;
     }
 
+
     // We've gone through all the transactions that could match, add all pending to results
-    results = results.concat(pending);
+    results = results.concat(nextProcess).concat(pending);
 
     results.sort(compareMatchResult);
     return results;
